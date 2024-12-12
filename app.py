@@ -1,31 +1,37 @@
-import json
 import os
-from datetime import datetime
-
+import json
 from flask import Flask, request, jsonify
-from oauth2client.service_account import ServiceAccountCredentials
+from carteirinhas import gerar_carteirinhas  # Importa a função de geração de carteirinhas
 import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import datetime
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-# Carregar as credenciais do Google a partir da variável de ambiente
+load_dotenv()
 google_credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
 
+# Certifique-se de carregar o JSON corretamente
+try:
+    credentials_dict = json.loads(google_credentials_json)
+    print(type(credentials_dict))  # Deve ser <class 'dict'>
+except json.JSONDecodeError as e:
+    print(f"Erro ao decodificar JSON: {e}")
+    credentials_dict = None
 
 # Função para autenticação no Google Sheets
 def autenticar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
-    # Converte a string JSON para um dicionário
-    creds_dict = json.loads(google_credentials_json)
-
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    client = gspread.authorize(creds)
-    spreadsheet = client.open("ListaPresenca2025")
-    sheet = spreadsheet.worksheet("Página1")
-    return sheet
-
+    if credentials_dict:
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
+        client = gspread.authorize(creds)
+        spreadsheet = client.open("ListaPresenca2025")
+        sheet = spreadsheet.worksheet("Página1")
+        return sheet
+    else:
+        raise ValueError("Credenciais inválidas")
 
 # Rota para registrar a presença
 @app.route('/validate', methods=['GET'])
@@ -37,7 +43,10 @@ def registrar_presenca():
         return jsonify({"error": "Parâmetros 'matricula' e 'id' são necessários"}), 400
 
     # Obter a planilha do Google Sheets
-    sheet = autenticar_google_sheets()
+    try:
+        sheet = autenticar_google_sheets()
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 500
 
     # Nome do aluno
     nome_aluno = request.args.get('nome', 'Aluno Desconhecido')
@@ -49,6 +58,7 @@ def registrar_presenca():
 
     return jsonify({"message": f"Presença de {nome_aluno} registrada com sucesso!"}), 200
 
-
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    gerar_carteirinhas()  # Gera as carteirinhas quando o servidor iniciar
+    port = int(os.environ.get('PORT', 8080))  # Usa a porta 8080, caso Railway não defina
+    app.run(debug=True, host='0.0.0.0', port=port)
