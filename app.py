@@ -1,26 +1,31 @@
-import os
-from flask import Flask, request, jsonify
-from carteirinhas import gerar_carteirinhas  # Importa a função de geração de carteirinhas
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import datetime
-from dotenv import load_dotenv
 import json
+import os
+from datetime import datetime
+
+from flask import Flask, request, jsonify
+from oauth2client.service_account import ServiceAccountCredentials
+import gspread
 
 app = Flask(__name__)
 
-load_dotenv()
+# Carregar as credenciais do Google a partir da variável de ambiente
 google_credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+
 
 # Função para autenticação no Google Sheets
 def autenticar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(google_credentials_json), scope)
+
+    # Converte a string JSON para um dicionário
+    creds_dict = json.loads(google_credentials_json)
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     spreadsheet = client.open("ListaPresenca2025")
     sheet = spreadsheet.worksheet("Página1")
     return sheet
+
 
 # Rota para registrar a presença
 @app.route('/validate', methods=['GET'])
@@ -44,7 +49,6 @@ def registrar_presenca():
 
     return jsonify({"message": f"Presença de {nome_aluno} registrada com sucesso!"}), 200
 
+
 if __name__ == "__main__":
-    gerar_carteirinhas()  # Gera as carteirinhas quando o servidor iniciar
-    port = int(os.environ.get('PORT', 8080))  # Usa a porta 8080, caso Railway não defina
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=8080)
