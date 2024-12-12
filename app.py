@@ -12,10 +12,13 @@ app = Flask(__name__)
 load_dotenv()
 google_credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
 
+# Verifique se a variável de ambiente está carregada corretamente
+print("Conteúdo de GOOGLE_CREDENTIALS_JSON:", google_credentials_json)
+
 # Certifique-se de carregar o JSON corretamente
 try:
     credentials_dict = json.loads(google_credentials_json)
-    print(type(credentials_dict))  # Deve ser <class 'dict'>
+    print("Tipo de credentials_dict:", type(credentials_dict))  # Deve ser <class 'dict'>
 except json.JSONDecodeError as e:
     print(f"Erro ao decodificar JSON: {e}")
     credentials_dict = None
@@ -25,6 +28,7 @@ def autenticar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
     if credentials_dict:
+        print("credentials_dict está presente e é um dicionário")
         creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
         client = gspread.authorize(creds)
         spreadsheet = client.open("ListaPresenca2025")
