@@ -29,7 +29,7 @@ except json.JSONDecodeError as e:
 def autenticar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    if credentials_dict:
+    if credentials_dict and isinstance(credentials_dict, dict):
         print("credentials_dict está presente e é um dicionário")
         creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
         client = gspread.authorize(creds)
