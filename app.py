@@ -17,7 +17,9 @@ print("Conteúdo de GOOGLE_CREDENTIALS_JSON:", google_credentials_json)
 
 # Certifique-se de carregar o JSON corretamente
 try:
-    credentials_dict = json.loads(google_credentials_json)
+    # Substituir \\n por \n para que as quebras de linha sejam processadas corretamente
+    google_credentials_json = google_credentials_json.replace("\\n", "\n")
+    credentials_dict = json.loads(google_credentials_json, strict=False)
     print("Tipo de credentials_dict:", type(credentials_dict))  # Deve ser <class 'dict'>
 except json.JSONDecodeError as e:
     print(f"Erro ao decodificar JSON: {e}")
